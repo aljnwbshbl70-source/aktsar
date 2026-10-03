@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>اختصار روابط</title>
+<style>
+:root{--bg:#f3f5f2;--card:#fff;--ink:#16221c;--mute:#5d6b63;--line:#d5ddd7;--accent:#0f6b4f;--accent-ink:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#101612;--card:#18211b;--ink:#e8efe9;--mute:#97a69c;--line:#2a372e;--accent:#4cc79a;--accent-ink:#06130d}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:var(--bg);color:var(--ink);font-family:Tahoma,"Segoe UI",system-ui,sans-serif}
+.box{width:100%;max-width:480px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px}
+h1{font-size:1.3rem;margin:0 0 4px}
+h2{font-size:1.1rem;margin:0 0 6px}
+p{margin:0 0 16px;color:var(--mute);font-size:.9rem}
+label{display:block;font-weight:700;font-size:.88rem;margin:12px 0 6px}
+input{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+input.ltr{direction:ltr;text-align:left}
+button,.btn{display:block;text-align:center;text-decoration:none;font:inherit;cursor:pointer;border-radius:8px;padding:12px;width:100%;margin-top:10px;background:var(--accent);color:var(--accent-ink);border:0;font-weight:700}
+.sec{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.6}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.out{margin-top:16px;display:none;gap:8px;align-items:center}
+.out.show{display:flex}
+.out a{flex:1;direction:ltr;text-align:left;color:var(--accent);font-weight:700;word-break:break-all}
+.out button{width:auto;margin:0;padding:8px 14px}
+.err{margin-top:12px;color:#b3261e;font-size:.88rem;min-height:1.2em}
+.lockedNote{margin-top:10px;font-size:.85rem;color:var(--mute)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;place-items:center;padding:20px}
+.ov.show{display:grid}
+.ov .box{max-width:420px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>اختصار روابط</h1>
+  <p>الصق الرابط الطويل واحصل على رابط قصير.</p>
+
+  <label for="url">الرابط</label>
+  <input id="url" class="ltr" type="url" inputmode="url" placeholder="https://example.com/very/long/link">
+
+  <label for="alias">اسم مخصص (اختياري)</label>
+  <input id="alias" class="ltr" type="text" placeholder="my-link" maxlength="30">
+
+  <button id="go" type="button">اختصر الرابط</button>
+  <div class="err" id="err" role="alert"></div>
+
+  <div class="out" id="out">
+    <a id="short" target="_blank" rel="noopener"></a>
+    <button id="copy" type="button" class="sec">نسخ</button>
+  </div>
+  <div class="lockedNote hide" id="lockedNote">هذا الرابط مقفول بكلمة مرور.</div>
+</div>
+
+<!-- الخطوة 1: القناة -->
+<div class="ov" id="step1" role="dialog" aria-modal="true" aria-labelledby="t1">
+  <div class="box">
+    <h2 id="t1">اشترك في قناة التحديثات</h2>
+    <p>تابع قناة المطور على واتساب ليصلك كل جديد.</p>
+    <a class="btn" href="https://whatsapp.com/channel/0029VbClAWDFXUuh4N1kdf2A" target="_blank" rel="noopener">فتح القناة</a>
+    <button id="next1" type="button" class="sec">متابعة</button>
+  </div>
+</div>
+
+<!-- الخطوة 2: القفل -->
+<div class="ov" id="step2" role="dialog" aria-modal="true" aria-labelledby="t2">
+  <div class="box">
+    <h2 id="t2">هل تريد قفل الرابط؟</h2>
+    <p>إذا قفلته، سيطلب منك الرابط كلمة مرور قبل أن يفتح.</p>
+    <div id="lockChoice">
+      <button id="yesLock" type="button">نعم، قفله</button>
+      <button id="noLock" type="button" class="sec">لا، اختصر بدون قفل</button>
+    </div>
+    <div id="pwBox" class="hide">
+      <label for="pw">كلمة المرور (4 أحرف على الأقل)</label>
+      <input id="pw" type="password" autocomplete="new-password">
+      <button id="doLock" type="button">اختصر وقفل</button>
+    </div>
+    <div class="err" id="err2" role="alert"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const show = (id, v) => $(id).classList.toggle("show", v);
+
+// الضغط على اختصار: تحقق سريع ثم نافذة القناة
+$("go").onclick = () => {
+  $("err").textContent = "";
+  try { new URL($("url").value.trim()); }
+  catch { $("err").textContent = "الصق رابطاً صحيحاً يبدأ بـ https://"; return; }
+  show("step1", true);
+};
+$("next1").onclick = () => {
+  show("step1", false);
+  $("lockChoice").classList.remove("hide");
+  $("pwBox").classList.add("hide");
+  $("pw").value = ""; $("err2").textContent = "";
+  show("step2", true);
+};
+$("yesLock").onclick = () => { $("lockChoice").classList.add("hide"); $("pwBox").classList.remove("hide"); $("pw").focus(); };
+$("noLock").onclick = () => create(false);
+$("doLock").onclick = () => {
+  if ($("pw").value.length < 4) { $("err2").textContent = "كلمة المرور 4 أحرف على الأقل"; return; }
+  create(true);
+};
+
+async function create(lock) {
+  $("err2").textContent = "";
+  ["noLock", "doLock"].forEach(i => $(i).disabled = true);
+  try {
+    const r = await fetch("/api/shorten", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: $("url").value.trim(),
+        alias: $("alias").value.trim() || undefined,
+        password: lock ? $("pw").value : undefined
+      })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || "حدث خطأ");
+    show("step2", false);
+    $("short").href = d.short; $("short").textContent = d.short;
+    $("lockedNote").classList.toggle("hide", !d.locked);
+    show("out", true);
+  } catch (e) {
+    show("step2", false);
+    $("err").textContent = e.message;
+  }
+  ["noLock", "doLock"].forEach(i => $(i).disabled = false);
+}
+
+$("copy").onclick = async () => {
+  try { await navigator.clipboard.writeText($("short").textContent); $("copy").textContent = "تم النسخ"; }
+  catch { $("copy").textContent = "انسخ يدوياً"; }
+  setTimeout(() => $("copy").textContent = "نسخ", 1500);
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/:code([a-zA-Z0-9_-]{3,30})", "destination": "/api/go?code=:code" }
+  ]
+}
